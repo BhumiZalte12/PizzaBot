@@ -1,6 +1,5 @@
-
-
 import mysql.connector
+
 global cnx
 
 cnx = mysql.connector.connect(
@@ -25,38 +24,38 @@ def insert_order_item(food_item, quantity, order_id):
         cursor.close()
 
         print("Order item inserted successfully!")
-
         return 1
 
     except mysql.connector.Error as err:
         print(f"Error inserting order item: {err}")
-
-        # Rollback changes if necessary
         cnx.rollback()
-
         return -1
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        # Rollback changes if necessary
         cnx.rollback()
-
         return -1
 
 # Function to insert a record into the order_tracking table
 def insert_order_tracking(order_id, status):
-    cursor = cnx.cursor()
+    try:
+        cursor = cnx.cursor()
 
-    # Inserting the record into the order_tracking table
-    insert_query = "INSERT INTO order_tracking (order_id, status) VALUES (%s, %s)"
-    cursor.execute(insert_query, (order_id, status))
+        # Inserting the record into the order_tracking table
+        insert_query = "INSERT INTO order_tracking (order_id, status) VALUES (%s, %s)"
+        cursor.execute(insert_query, (order_id, status))
 
-    # Committing the changes
-    cnx.commit()
+        # Committing the changes
+        cnx.commit()
 
-    # Closing the cursor
-    cursor.close()
+        # Closing the cursor
+        cursor.close()
 
+    except mysql.connector.Error as err:
+        print(f"Error inserting order tracking record: {err}")
+        cnx.rollback()
+
+# Function to get the total order price
 def get_total_order_price(order_id):
     cursor = cnx.cursor()
 
@@ -65,12 +64,15 @@ def get_total_order_price(order_id):
     cursor.execute(query)
 
     # Fetching the result
-    result = cursor.fetchone()[0]
+    result = cursor.fetchone()
 
     # Closing the cursor
     cursor.close()
 
-    return result
+    if result:
+        return result[0]
+    else:
+        return 0  # Return 0 if no result found
 
 # Function to get the next available order_id
 def get_next_order_id():
@@ -81,16 +83,16 @@ def get_next_order_id():
     cursor.execute(query)
 
     # Fetching the result
-    result = cursor.fetchone()[0]
+    result = cursor.fetchone()
 
     # Closing the cursor
     cursor.close()
 
     # Returning the next available order_id
-    if result is None:
-        return 1
+    if result and result[0] is not None:
+        return result[0] + 1
     else:
-        return result + 1
+        return 1
 
 # Function to fetch the order status from the order_tracking table
 def get_order_status(order_id):
@@ -110,12 +112,13 @@ def get_order_status(order_id):
     if result:
         return result[0]
     else:
-        return None
+        return "Status not found"  # Return a default message if no status found
 
 
 if __name__ == "__main__":
+    # For testing purposes, you can call the functions like:
     # print(get_total_order_price(56))
     # insert_order_item('Samosa', 3, 99)
     # insert_order_item('Pav Bhaji', 1, 99)
     # insert_order_tracking(99, "in progress")
-    print(get_next_order_id())
+    print(get_next_order_id())  # Example test to get the next order ID
